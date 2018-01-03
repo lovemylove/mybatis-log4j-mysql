@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ly.mybatisdemo.dao.IUserDao">
+    <resultMap id="userMap" type="User">
+        <result property="userId" column="user_id"/>
+        <result property="userName" column="user_name"/>
+        <result property="userHobby" column="user_hobby"/>
+        <result property="travelCity" column="travel_city"/>
+        <result property="isValid" column="is_valid"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <resultMap id="userDetailMap" extends="userMap" type="userDetail">
+        <result property="cityId" column="city_id"/>
+        <result property="city" column="city"/>
+        <result property="province" column="province"/>
+        <result property="price" column="price"/>
+    </resultMap>
+
+    <sql id="column">
+        user_id, user_name, user_hobby, travel_city, create_time, update_time
+    </sql>
+
+    <select id="findAllUser" resultMap="userMap">
+        select <include refid="column"/>
+          from user_info
+         where is_valid = 1
+      order by update_time desc
+    </select>
+
+    <insert id="addUser">
+        insert into user_info
+               (user_name, user_hobby, travel_city, is_valid)
+        values (#{userName}, #{userHobby}, #{travelCity}, #{isValid})
+    </insert>
+
+    <insert id="addUser2">
+        insert into user_info
+        <set>
+            <if test="userName != null and userName != ''">
+                user_name = #{userName},
+            </if>
+            <if test="userHobby != null and userHobby != ''">
+                user_hobby = #{userHobby},
+            </if>
+            <if test="travelCity != null and travelCity != ''">
+                travel_city = #{travelCity}
+            </if>
+        </set>
+    </insert>
+
+    <select id="queryUser" resultMap="userMap">
+         select <include refid="column"/>
+           from user_info
+          where is_valid = 1
+        <if test="userName != null and userName != ''">
+            and user_name = #{userName}
+        </if>
+        <if test="userHobby != null and userHobby != ''">
+            and user_hobby = #{userHobby}
+        </if>
+        <if test="travelCity != null and travelCity != ''">
+            and travel_city = #{travelCity}
+        </if>
+       order by update_time desc
+    </select>
+
+    <select id="searchUser" resultMap="userMap">
+        select <include refid="column"/>
+          from user_info
+        <where>
+            <if test="userName != null and userName != ''">
+                user_name like concat('%', #{userName}, '%')
+            </if>
+            <if test="userHobby != null and userHobby != ''">
+                and user_hobby like concat('%', #{userHobby}, '%')
+            </if>
+            <if test="travelCity != null and travelCity != ''">
+                and travel_city like concat('%', #{travelCity}, '%')
+            </if>
+            and is_valid = 1
+        </where>
+       order by update_time desc
+    </select>
+
+    <update id="deleteUser">
+        update user_info
+           set is_valid = 0
+         where user_id = #{userId}
+    </update>
+
+    <delete id="physicsDeleteUser">
+        delete from user_info
+              where user_id = #{userId}
+    </delete>
+
+    <select id="loadEditUser" resultMap="userMap">
+        select <include refid="column"/>
+          from user_info
+         where user_id = #{userId}
+    </select>
+
+    <update id="postEditUser">
+        update user_info
+        <set>
+            <if test="userName != null and userName != ''">
+                user_name = #{userName},
+            </if>
+            <if test="userHobby != null and userHobby != ''">
+                user_hobby = #{userHobby},
+            </if>
+            <if test="travelCity != null and travelCity != ''">
+                travel_city = #{travelCity},
+            </if>
+            <if test="isValid != null and isValid != ''">
+                is_valid = #{isValid},
+            </if>
+            update_time = now()
+        </set>
+        <where>
+            <if test="userId != null and userId != ''">
+                user_id = #{userId}
+            </if>
+        </where>
+    </update>
+
+    <update id="postEditUser2">
+        update user_info
+           set user_name = #{userName},
+               user_hobby = #{userHobby},
+               travel_city = #{travelCity},
+               update_time = now()
+         where user_id = #{userId}
+    </update>
+
+    <select id="queryUserByCities" resultMap="userMap">
+         select <include refid="column"/>
+           from user_info
+          where is_valid = 1
+        <if test="array != null and array[0] != ''">
+            and travel_city in
+            <foreach collection="array" item="city" index="index" open="(" separator="," close=")">
+                #{city}
+            </foreach>
+        </if>
+       order by update_time desc
+    </select>
+
+    <select id="getUserDetail" resultMap="userDetailMap">
+        select u.user_name, u.user_hobby, u.travel_city, c.price, c.province
+          from user_info u, city_info c
+         where u.travel_City = c.city
+           and u.is_valid = 1
+           and u.user_id = #{userId}
+    </select>
+</mapper>
